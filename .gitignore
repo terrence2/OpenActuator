@@ -1,3 +1,7 @@
+# OpenActuator specific stuff.
+config.json
+auth.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -7,6 +11,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.venv*/
 .Python
 env/
 build/
@@ -99,3 +104,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# PyCharm stuff
+.idea/

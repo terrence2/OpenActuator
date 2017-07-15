@@ -4,10 +4,13 @@ import time
 
 DIAGNOSTIC_LED = None
 try:
-    with open('diagnostic_led.pin', 'r') as fp:
-        # We don't know whether to invert the signal or not, but it shouldn't
-        # matter as long as we use a 50-50 duty cycle.
-        DIAGNOSTIC_LED = machine.Signal(int(fp.read()), machine.Pin.OUT)
+    with open('config/diagnostic_led.pin', 'r') as fp:
+        invert = False
+        value = int(fp.read())
+        if value < 0:
+            value = -value
+            invert = True
+        DIAGNOSTIC_LED = machine.Signal(value, machine.Pin.OUT, invert=invert)
 except:
     pass
 

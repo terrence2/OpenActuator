@@ -11,4 +11,3 @@ def connect_to_wifi():
         while not sta_if.isconnected():
             diagnostic_led.blink_once(500)
     print('network config: ', sta_if.ifconfig())
-

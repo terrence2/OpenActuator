@@ -19,5 +19,12 @@
   "switches": [],
   "motion_detectors": [],
   "neopixels": [],
-  "weather": [],
+  "weather_stations": [
+    {
+      "type": "DHT22",
+      "pin": 14,
+      "interval": [5, "s"],
+      "target": ["10.0.0.30", 33474]
+    }
+  ],
 }

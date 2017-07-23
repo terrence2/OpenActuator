@@ -19,3 +19,14 @@ def auth():
 
 def config():
     return CONFIG
+
+
+def parse_duration_ms(duration):
+    base = int(duration[0])
+    unit = {
+        "ms": 1,
+        "s": 1000,
+        "m": 60000,
+    }[duration[1]]
+    return base * unit
+

@@ -20,6 +20,13 @@ def blink_forever(cycle_period_ms):
         blink_once(cycle_period_ms)
 
 
+def blink_n(cycle_period_ms, count):
+    i = 0
+    while i < count:
+        blink_once(cycle_period_ms)
+        i += 1
+
+
 def blink_once(cycle_period_ms):
     half_period = cycle_period_ms // 2
 

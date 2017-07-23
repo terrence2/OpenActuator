@@ -1,5 +1,5 @@
 # OpenActuator
-A secure, reliable, and fast ESP userland for lights, buttons, switches, motion detectors, weather sensors, etc.
+A ~~secure~~ (waiting on ssl server support in the esp8266 micropython implementation), reliable, and fast ESP userland for lights, buttons, switches, motion detectors, weather sensors, etc.
 
 ## Quick Start Guide
 1) Get your hands on an ESP-32 or ESP-8266.
@@ -7,6 +7,30 @@ A secure, reliable, and fast ESP userland for lights, buttons, switches, motion 
 1) Describe where you soldered everything in config.json.
 1) Flash MicroPython to the device and upload OpenActuator and config.json to the filesystem.
 1) Hang it on a wall or something.
+
+## Configuration Guide
+
+OpenActuator is configured with 3 files: diagnostic_led.pin, auth.json, config.json.
+
+### diagnostic_led.pin
+
+Most esp8266 and esp32 boards have an extra LED soldered to one of the pins on
+the board. OpenActuator can flash this LED during early boot to display
+high-level information about the boot process or problems during boot.
+In particular, we want to be able to flash the LED if there are errors
+in config.json. Unfortunately, as every board has this LED on a different
+pin and some are active high and some active low, we still need to configure
+it somehow.
+
+`diagnostic_led.pin` is a flat file in the `config/` directory. Its
+content is a single number in textual format (ascii representation)
+that designates the pin attached to the LED. If the pin is active low,
+negate the number.
+
+Check the `examples` directory for a `diagnostic_led-$MODEL.pin` file
+that matches your board model. If there is not one already, please make
+one by consulting your board documentation and send a pull request.
+
 
 ## Detailed Start Guide
 

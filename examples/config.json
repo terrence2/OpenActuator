@@ -1,0 +1,23 @@
+{
+  "cpu": {
+    "freq": 160000000
+  },
+
+  "http_server": {
+    "keyfile": "config/test_openactuator.key.pem",
+    "certfile": "config/test_openactuator.cert.pem",
+    "ca_certs": "config/chain.cert.pem"
+  },
+  "http_client": {
+    "target": {
+      "address": "10.0.0.30",
+      "port": 8080
+    }
+  },
+
+  "buttons": [],
+  "switches": [],
+  "motion_detectors": [],
+  "neopixels": [],
+  "weather": [],
+}

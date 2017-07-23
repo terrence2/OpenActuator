@@ -45,3 +45,37 @@ def test_weather_stations():
     assert data['temperature'] == 42.0
     assert data['humidity'] == 0.42
     assert data['pressure'] == -1
+
+
+def test_endpoints():
+    config = [{
+        "type": "DHT22",
+        "id": "foo",
+        "interval": [10, "ms"],
+        "target": ['127.0.0.1', 12345],
+        "pin": 42,
+    }, {
+        "type": "DHT11",
+        "id": "bar",
+        "interval": [10, "ms"],
+        "target": ['127.0.0.1', 12345],
+        "pin": 43,
+    }]
+    stations = weather_stations.WeatherStations(config)
+    resp = stations.list()
+    assert resp[0] == 200
+    assert len(resp[1]) > 0
+    data = json.loads(resp[2])
+    assert 'foo' in data
+    assert 'bar' in data
+    assert data['foo']['pin'] == 42
+    assert data['foo']['temperature'] == 42.0
+    assert data['foo']['humidity'] == 0.42
+
+    resp = stations.show('bar')
+    assert resp[0] == 200
+    assert len(resp[1]) > 0
+    data = json.loads(resp[2])
+    assert data['pin'] == 43
+    assert data['temperature'] == 42.0
+    assert data['humidity'] == 0.42

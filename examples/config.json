@@ -3,11 +3,7 @@
     "freq": 160000000
   },
 
-  "http_server": {
-    "keyfile": "config/test_openactuator.key.pem",
-    "certfile": "config/test_openactuator.cert.pem",
-    "ca_certs": "config/chain.cert.pem"
-  },
+  "http_server": {},
   "http_client": {
     "target": {
       "address": "10.0.0.30",
@@ -24,7 +20,7 @@
       "type": "DHT22",
       "id": "dht-test-sensor",
       "pin": 14,
-      "interval": [5, "s"],
+      "interval": [5, "m"],
       "target": ["10.0.0.30", 33474]
     }
   ],

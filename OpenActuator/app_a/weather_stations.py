@@ -4,7 +4,7 @@ import dht
 import machine
 import usocket
 
-MESSAGE = """{{"temperature":{},"humidity":{},"pressure":{}}}"""
+MESSAGE = '{{"id":"{}","temperature":{},"humidity":{},"pressure":{}}}'
 
 
 class WeatherStation:
@@ -26,13 +26,14 @@ class WeatherStation:
             diagnostic_led.blink_forever(200)
 
     def __init__(self, config):
+        self.identity = config['id']
         self.target_address = tuple(config['target'])
-        self.socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
         self.interval_ms = conf.parse_duration_ms(config.get('interval', [300, 's']))
         self.last_measure_ms = 0
+        self.socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
 
     def notify(self, temperature, humidity, pressure):
-        data = bytes(MESSAGE.format(temperature, humidity, pressure), "ascii")
+        data = bytes(MESSAGE.format(self.identity, temperature, humidity, pressure), "ascii")
         self.socket.sendto(data, self.target_address)
 
     def think(self, ticks_ms):

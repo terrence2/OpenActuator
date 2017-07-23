@@ -9,8 +9,11 @@ def main():
 
     while True:
         msg = server.recvfrom(1024)
-        data = json.loads(msg[0])
-        print("Temp: {}, Humidity: {}, Pressure: {}".format(data['temperature'] * 9 / 5 + 32, data['humidity'], data['pressure']))
+        data = json.loads(str(msg[0], 'ascii'))
+        print("ID: {}, Temp: {}, Humidity: {}, Pressure: {}".format(data['id'],
+                                                                    data['temperature'] * 9 / 5 + 32,
+                                                                    data['humidity'],
+                                                                    data['pressure']))
 
 
 if __name__ == '__main__':

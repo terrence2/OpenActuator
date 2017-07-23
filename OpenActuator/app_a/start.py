@@ -21,9 +21,8 @@ def main():
             print("handling ready socket")
             server.handle_ready_socket(poller, tpl[0], tpl[1])
 
-        if ready is None:
-            for station in weather_stations:
-                station.think(utime.ticks_ms())
+        for station in weather_stations:
+            station.think(utime.ticks_ms())
 
 
 def configure_cpu():

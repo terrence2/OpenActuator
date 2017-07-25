@@ -11,10 +11,18 @@
     }
   },
 
-  "buttons": [],
+  "buttons": [
+
+  ],
+
   "switches": [],
+
   "motion_detectors": [],
+
+  "leds": [],
+
   "neopixels": [],
+
   "weather_stations": [
     {
       "type": "DHT22",

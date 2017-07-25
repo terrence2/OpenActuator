@@ -1,5 +1,6 @@
 import conf
 import htserver
+import interrupt_vector
 import machine
 import net
 import select
@@ -7,7 +8,16 @@ import utime
 import weather_stations
 
 
+def _lower_half(ticks, pin):
+    print("GOT LOWER HALF")
+
+
 def main():
+    iv = interrupt_vector.InterruptVector()
+
+    button = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
+    iv.register(machine.Pin.IRQ_FALLING, button, _lower_half)
+
     configure_cpu()
     net.connect_to_wifi()
 
@@ -22,10 +32,21 @@ def main():
     server = htserver.HttpServer(poller, routes, conf.config()['http_server'])
 
     while True:
-        ready = poller.ipoll(1000)
+        print("a")
+        ready = poller.ipoll(5000)
+        print("b")
+
+        iv.think()
+
         for tpl in ready:
-            print("handling ready socket")
+            print("handling ready socket: {}, {}".format(tpl[0], pipe))
             server.handle_ready_socket(*tpl)
+
+            if tpl[0] == pipe:
+                pipe.seek(0)
+                print("GOT BOTTOM HALF")
+
+        iv.think()
 
         weather_devices.think(utime.ticks_ms())
 

@@ -3,7 +3,8 @@ import sys
 sys.path.append(os.path.realpath('./OpenActuator/app_a'))
 sys.path.append(os.path.realpath('./test/mock'))
 
-os.chdir('./test')
+if os.path.isfile('LICENSE'):
+    os.chdir('./test')
 import htserver
 
 import re

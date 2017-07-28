@@ -8,7 +8,7 @@ import utime
 import weather_stations
 
 
-def _lower_half(ticks, pin):
+def _lower_half(pin, first_call_time, last_call_time):
     print("GOT LOWER HALF")
 
 

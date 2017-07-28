@@ -40,7 +40,7 @@ def main():
 
         for tpl in ready:
             print("handling ready socket: {}, {}".format(tpl[0], pipe))
-            server.handle_ready_socket(*tpl)
+            server.handle_ready_socket(poller, *tpl)
 
             if tpl[0] == pipe:
                 pipe.seek(0)

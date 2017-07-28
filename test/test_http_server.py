@@ -26,28 +26,6 @@ ADDRESS = ('127.0.0.1', 12346)
 CONFIG = {"ADDRESS": ADDRESS[0], "port": ADDRESS[1]}
 
 
-def test_404_on_no_routes():
-    poller = select.poll()
-    server = htserver.HttpServer(poller, [], CONFIG)
-
-    def _client(ADDRESS):
-        sock = socket.socket()
-        sock.connect(ADDRESS)
-        sock.send(b"GET /foo HTTP/1.1\r\n\r\n")
-        data = sock.recv(1024)
-        assert data == b'HTTP/1.0 404 Not Found\r\n'
-
-    with threaded(_client, ADDRESS):
-        ready = poller.poll(1)
-        server.handle_ready_socket(*ready[0])
-
-
-def _200_ok(msg):
-    def _inner(*args):
-        return 200, [], msg + " ".join(args)
-    return _inner
-
-
 def _drain(sock):
     parts = []
     data = b'----'
@@ -55,6 +33,31 @@ def _drain(sock):
         data = sock.recv(1024)
         parts.append(data)
     return b''.join(parts)
+
+
+def test_404_on_no_routes():
+    poller = select.poll()
+    server = htserver.HttpServer(poller, [], CONFIG)
+
+    def _client(ADDRESS):
+        sock = socket.socket()
+        sock.setblocking(True)
+        sock.connect(ADDRESS)
+        sock.send(b"GET /foo HTTP/1.1\r\n\r\n")
+        data = _drain(sock)
+        assert data == b'HTTP/1.0 404 Not Found\r\n\r\n'
+
+    with threaded(_client, ADDRESS):
+        ready = poller.poll(1)
+        server.handle_ready_socket(poller, *ready[0])
+        ready = poller.poll(1)
+        server.handle_ready_socket(poller, *ready[0])
+
+
+def _200_ok(msg):
+    def _inner(*args):
+        return 200, [], msg + " ".join(args)
+    return _inner
 
 
 def test_basic_routes():
@@ -83,11 +86,15 @@ def test_basic_routes():
 
     with threaded(_foo_client, ADDRESS):
         ready = poller.poll(1)
-        server.handle_ready_socket(*ready[0])
+        server.handle_ready_socket(poller, *ready[0])
+        ready = poller.poll(1)
+        server.handle_ready_socket(poller, *ready[0])
 
     with threaded(_bar_client, ADDRESS):
         ready = poller.poll(1)
-        server.handle_ready_socket(*ready[0])
+        server.handle_ready_socket(poller, *ready[0])
+        ready = poller.poll(1)
+        server.handle_ready_socket(poller, *ready[0])
 
 
 def test_regex_routes():
@@ -116,8 +123,12 @@ def test_regex_routes():
 
     with threaded(_foo_client, ADDRESS):
         ready = poller.poll(1)
-        server.handle_ready_socket(*ready[0])
+        server.handle_ready_socket(poller, *ready[0])
+        ready = poller.poll(1)
+        server.handle_ready_socket(poller, *ready[0])
 
     with threaded(_bar_client, ADDRESS):
         ready = poller.poll(1)
-        server.handle_ready_socket(*ready[0])
+        server.handle_ready_socket(poller, *ready[0])
+        ready = poller.poll(1)
+        server.handle_ready_socket(poller, *ready[0])

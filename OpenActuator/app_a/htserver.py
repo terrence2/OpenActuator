@@ -1,10 +1,7 @@
 import select
 import ure
 import usocket
-
-
-class RestartError(Exception):
-    pass
+from errors import RestartError
 
 
 class HttpServer:
@@ -28,58 +25,62 @@ class HttpServer:
         bind_addr = addr_info[0][-1]
 
         self.listen_socket = usocket.socket()
+        self.listen_socket.setblocking(False)
         self.listen_socket.setsockopt(usocket.SOL_SOCKET, usocket.SO_REUSEADDR, 1)
         self.listen_socket.bind(bind_addr)
         self.listen_socket.listen(3)
         poll.register(self.listen_socket, select.POLLIN | select.POLLERR)
         print("Started HTTPS server on {}", bind_addr)
 
-    def handle_ready_socket(self, socket, event):
-        # uPython poll returns the actual socket object, whereas CPython poll returns the fd int.
-        if isinstance(socket, int):
-            if socket != self.listen_socket.fileno():
-                return
-        else:
-            if socket != self.listen_socket:
-                return
+        self.clients = {}
 
+    def is_same_socket(self, maybe_socket, socket):
+        # uPython poll returns the actual socket object, whereas CPython poll returns the fd int.
+        if isinstance(maybe_socket, int):
+            if maybe_socket != socket.fileno():
+                return False
+        else:
+            if maybe_socket != socket:
+                return False
+        return True
+
+    def find_client_for_socket(self, maybe_socket):
+        if isinstance(maybe_socket, int):
+            for handler in self.clients.values():
+                if self.is_same_socket(maybe_socket, handler.socket):
+                    if not handler.handle_client_data(poller, event):
+                        del self.clients[id(handler.socket)]
+                        return
+        else:
+            client = self.clients.get(id(maybe_socket), None)
+            if client is not None:
+                if not client.handle_client_data(poller, event):
+                    del self.clients[id(maybe_socket)]
+
+    def handle_ready_socket(self, poller, socket, event):
+        if self.is_same_socket(socket, self.listen_socket):
+            return self.handle_new_connection(poller, event)
+
+        if isinstance(socket, int):
+            for handler in self.clients.values():
+                if self.is_same_socket(socket, handler.socket):
+                    if not handler.handle_client_data(poller, event):
+                        del self.clients[id(handler.socket)]
+                        return
+        else:
+            client = self.clients.get(id(socket), None)
+            if client is not None:
+                if not client.handle_client_data(poller, event):
+                    del self.clients[id(socket)]
+
+    def handle_new_connection(self, poller, event):
         if event == select.POLLERR:
             raise RestartError("at handle_ready_sock")
 
         client_socket, client_addr = self.listen_socket.accept()
         print("Got new connection from: {}".format(client_addr))
 
-        fp = client_socket.makefile('rwb', 0)
-        #self.client_ssl = ussl.wrap_socket(self.client_socket, server_side=True,
-        #                                   keyfile=conf.config()['http_server']['keyfile'],
-        #                                   certfile=conf.config()['http_server']['certfile'],
-        #                                   ca_certs=conf.config()['http_server']['ca_certs'],
-        #                                   cert_reqs=0)  # FIXME: ussl.CERT_REQUIRED, once supported on ESP)
-
-        request_line = header_line = str(fp.readline(), 'ascii')
-        while header_line and header_line != '\r\n':
-            header_line = str(fp.readline(), 'ascii')
-
-        # Dispatch to route.
-        method, path, _v = request_line.split()
-        handler, args = self.find_route(method, path)
-        status, headers, body = handler(*args)
-        body = bytes(body, 'ascii')
-
-        status_message = self.status_map.get(status, 'Unknown Code')
-        client_socket.send(bytes("HTTP/1.0 {} {}\r\n".format(status, status_message), 'ascii'))
-
-        headers = {}
-        if body:
-            headers['Content-Length'] = str(len(body))
-        for key, value in headers.items():
-            client_socket.send(bytes("{}: {}\r\n".format(key, value), 'ascii'))
-        client_socket.send(b"\r\n")
-
-        if body:
-            client_socket.send(body)
-
-        client_socket.close()
+        self.clients[id(client_socket)] = HttpClientHandler(poller, self, client_socket)
 
     def find_route(self, method: str, path: str):
         for route in self.routes:
@@ -100,3 +101,52 @@ class HttpServer:
 
     def _handle_404(self):
         return 404, [], ""
+
+
+class HttpClientHandler:
+    def __init__(self, poller, server, socket):
+        self.server = server
+        self.socket = socket
+        self.socket.setblocking(True)
+        self.fp = self.socket.makefile('rwb', 0)
+        poller.register(self.socket, select.POLLIN | select.POLLOUT | select.POLLERR)
+
+    def handle_client_data(self, poller, event):
+        if event == select.POLLERR:
+            raise RestartError("at handle_ready_sock")
+
+        #self.client_ssl = ussl.wrap_socket(self.client_socket, server_side=True,
+        #                                   keyfile=conf.config()['http_server']['keyfile'],
+        #                                   certfile=conf.config()['http_server']['certfile'],
+        #                                   ca_certs=conf.config()['http_server']['ca_certs'],
+        #                                   cert_reqs=0)  # FIXME: ussl.CERT_REQUIRED, once supported on ESP)
+
+        request_line = header_line = str(self.fp.readline(), 'ascii')
+        while header_line and header_line != '\r\n':
+            header_line = str(self.fp.readline(), 'ascii')
+
+        # Dispatch to route.
+        method, path, _v = request_line.split()
+        handler, args = self.server.find_route(method, path)
+        status, headers, body = handler(*args)
+        body = bytes(body, 'ascii')
+        print(body)
+
+        status_message = self.server.status_map.get(status, 'Unknown Code')
+        print(status_message)
+        self.socket.send(bytes("HTTP/1.0 {} {}\r\n".format(status, status_message), 'ascii'))
+
+        headers = {}
+        if body:
+            headers['Content-Length'] = str(len(body))
+        for key, value in headers.items():
+            self.socket.send(bytes("{}: {}\r\n".format(key, value), 'ascii'))
+        self.socket.send(b"\r\n")
+
+        if body:
+            self.socket.send(body)
+
+        poller.unregister(self.socket)
+        self.socket.close()
+        return False
+

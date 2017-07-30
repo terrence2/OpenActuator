@@ -18,7 +18,13 @@ class Pin:
     IRQ_RISING = 2
     IRQ_HIGH_LEVEL = 3
 
-    def __init__(self, num, opt=None):
+    IN = 0
+    OUT = 1
+
+    PULL_UP = 2
+    PULL_DOWN = 4
+
+    def __init__(self, num, direction=None, pull=None):
         self.irqs = [None, None, None, None]
 
     def irq(self, handler, trigger):

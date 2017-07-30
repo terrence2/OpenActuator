@@ -33,7 +33,7 @@ class InterruptVector:
         finally:
             machine.enable_irq(irq_state)
 
-    def think(self):
+    def think(self, ticks_ms):
         irq_state = machine.disable_irq()
         try:
             if not self.triggered:

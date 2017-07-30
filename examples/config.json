@@ -1,7 +1,18 @@
 {
   "cpu": {
-    "freq": 160000000
+    "freq": 160000000,
   },
+
+  "main_loop": {
+    "interval": 500,
+    "minimum": 10,
+  },
+
+  "panic_handler": {
+    "address": "10.0.0.30",
+    "port": 6666,
+    "path": "/"
+  }
 
   "http_server": {},
   "http_client": {

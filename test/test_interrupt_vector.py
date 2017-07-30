@@ -20,15 +20,15 @@ def test_basic():
         assert iv_pin == pin
 
     iv = interrupt_vector.InterruptVector()
-    iv.think()
-    iv.think()
-    iv.think()
+    iv.think(10)
+    iv.think(20)
+    iv.think(30)
     iv.register(machine.Pin.IRQ_FALLING, pin, _lower_half)
 
     pin.poke()
-    iv.think()
+    iv.think(40)
     assert called > 0
 
-    iv.think()
-    iv.think()
-    iv.think()
+    iv.think(50)
+    iv.think(60)
+    iv.think(70)

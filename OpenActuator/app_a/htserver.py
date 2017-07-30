@@ -32,7 +32,7 @@ class HttpServer:
         poll.register(self.listen_socket, select.POLLIN | select.POLLERR)
         print("Started HTTPS server on {}", bind_addr)
 
-        self.clients = {}
+        self.clients = []
 
     def is_same_socket(self, maybe_socket, socket):
         # uPython poll returns the actual socket object, whereas CPython poll returns the fd int.
@@ -44,34 +44,14 @@ class HttpServer:
                 return False
         return True
 
-    def find_client_for_socket(self, maybe_socket):
-        if isinstance(maybe_socket, int):
-            for handler in self.clients.values():
-                if self.is_same_socket(maybe_socket, handler.socket):
-                    if not handler.handle_client_data(poller, event):
-                        del self.clients[id(handler.socket)]
-                        return
-        else:
-            client = self.clients.get(id(maybe_socket), None)
-            if client is not None:
-                if not client.handle_client_data(poller, event):
-                    del self.clients[id(maybe_socket)]
-
     def handle_ready_socket(self, poller, socket, event):
         if self.is_same_socket(socket, self.listen_socket):
             return self.handle_new_connection(poller, event)
 
-        if isinstance(socket, int):
-            for handler in self.clients.values():
-                if self.is_same_socket(socket, handler.socket):
-                    if not handler.handle_client_data(poller, event):
-                        del self.clients[id(handler.socket)]
-                        return
-        else:
-            client = self.clients.get(id(socket), None)
-            if client is not None:
-                if not client.handle_client_data(poller, event):
-                    del self.clients[id(socket)]
+        for handler in self.clients:
+            if self.is_same_socket(socket, handler.socket):
+                if not handler.handle_client_data(poller, event):
+                    return self.clients.remove(handler)
 
     def handle_new_connection(self, poller, event):
         if event == select.POLLERR:
@@ -80,7 +60,7 @@ class HttpServer:
         client_socket, client_addr = self.listen_socket.accept()
         print("Got new connection from: {}".format(client_addr))
 
-        self.clients[id(client_socket)] = HttpClientHandler(poller, self, client_socket)
+        self.clients.append(HttpClientHandler(poller, self, client_socket))
 
     def find_route(self, method: str, path: str):
         for route in self.routes:

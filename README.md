@@ -31,6 +31,108 @@ Check the `examples` directory for a `diagnostic_led-$MODEL.pin` file
 that matches your board model. If there is not one already, please make
 one by consulting your board documentation and send a pull request.
 
+### auth.json
+
+At the very least this requires a "wifi" section containing "ssid" and
+"psk" for the network you will be connecting to.
+```json
+{
+  "wifi": {
+    "ssid": "My Network",
+    "psk": "password"
+  }
+}
+```
+
+### config.json
+
+This file has many different sections, each describing a different class of hardware.
+The snippets here describe each section independently. They will need to be joined
+together into a single json object. If in doubt, see the example configurations in
+the example directory.
+
+#### CPU Configuration
+
+The "cpu" object may contain a "freq" key, indicating an overclock. If none
+is provided, the default value will be kept.
+```json
+{
+  "cpu": { // optional
+    "freq": 160000000, // optional
+  },
+}
+```
+
+#### Main Loop Configuration
+
+In order to support animation, internally, OpenActuator is structured like a
+typical game engine. This section allows you to set the desired loop time in
+milliseconds via the key "interval". For example, 33ms corresponds to 30
+"frames" per second, allowing the loop to animate through 30 values in a second.
+A reasonable value here will depend on the CPU's capabilities and the requirements
+of the attached hardware.
+```json
+  "main_loop": {
+    "interval": 50,
+    "minimum": 10,
+  },
+```
+
+```json
+  "panic_handler": {
+    "address": "10.0.0.30",
+    "port": 6666,
+    "path": "/"
+  }
+
+  "http_server": {},
+  "http_client": {
+    "target": {
+      "address": "10.0.0.30",
+      "port": 8080
+    }
+  },
+
+  "buttons": [
+    {
+      "id": "button-test-1",
+      "pin": 12,
+      "pull": "up",
+      "udp_target": ["10.0.0.30", 33475],
+      "http_target": ["10.0.0.30", 9999]
+    }
+  ],
+
+  "switches": [],
+
+  "motion_detectors": [],
+
+  "leds": [],
+
+  "neopixels": [],
+```
+
+#### Weather Station Configuration
+
+OpenActuator supports all of the weather stations that uPython supports directly,
+i.e. the DHT11 and DHT22 family (in one-wire mode), as well as some I2C devices,
+as yet to be determined. When a measurement is taken every "interval", the values
+and the device "id" are sent to the given "udp_target" in json format. The
+"id" field can be used to distinguish between multiple sensors reporting to the
+same address.
+```json
+}
+  "weather_stations": [
+    {
+      "type": "DHT22",
+      "id": "dht-test-sensor",
+      "pin": 14,
+      "interval": [5, "m"],
+      "udp_target": ["10.0.0.30", 33474]
+    }
+  ]
+}
+```
 
 ## Detailed Start Guide
 
@@ -63,5 +165,6 @@ PORT=/dev/##something## make
 ### Upload your configuration to the ESP
 
 You should have a customized auth.json and config.json in the root directory of the OpenActuator
-project.
+project. Follow the instructions in the `Configuration Guide` section to craft these files.
+
 

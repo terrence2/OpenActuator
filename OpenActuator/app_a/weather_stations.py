@@ -4,6 +4,7 @@ import dht
 import json
 import machine
 import usocket
+import utime
 
 MESSAGE = '{{"id":"{}","temperature":{},"humidity":{},"pressure":{}}}'
 
@@ -49,14 +50,18 @@ class WeatherStation:
 
     def __init__(self, config):
         self.identity = config['id']
-        self.target_address = tuple(config['target'])
+        self.target_address = tuple(config['udp_target'])
         self.interval_ms = conf.parse_duration_ms(config.get('interval', [15, 'm']))
         self.last_measure_ms = 0
         self.socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
+        self.socket.setblocking(False)
 
     def notify(self, temperature: float, humidity: float, pressure: float):
         data = bytes(MESSAGE.format(self.identity, temperature, humidity, pressure), "ascii")
         self.socket.sendto(data, self.target_address)
+
+    def measure(self):
+        raise NotImplementedError("pure virtual")
 
     def think(self, ticks_ms: int):
         if self.last_measure_ms + self.interval_ms < ticks_ms:
@@ -90,7 +95,9 @@ class DHTWeatherStation(WeatherStation):
 
     def measure(self) -> (float, float, float):
         try:
+            t0 = utime.ticks_ms()
             self.device.measure()
+            print("WS Measure took: {} ms".format(utime.ticks_ms() - t0))
         except OSError:
             diagnostic_led.blink_n(50, 10)
             return None

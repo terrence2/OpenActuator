@@ -1,10 +1,10 @@
 {
   "cpu": {
-    "freq": 160000000,
+    "freq": 80000000,
   },
 
   "main_loop": {
-    "interval": 500,
+    "interval": 50,
     "minimum": 10,
   },
 
@@ -24,8 +24,11 @@
 
   "buttons": [
     {
+      "id": "button-test-1",
       "pin": 12,
-      "pull": "up"
+      "pull": "up",
+      "udp_target": ["10.0.0.30", 33475],
+      "http_target": ["10.0.0.30", 9999]
     }
   ],
 
@@ -42,8 +45,8 @@
       "type": "DHT22",
       "id": "dht-test-sensor",
       "pin": 14,
-      "interval": [5, "m"],
-      "target": ["10.0.0.30", 33474]
+      "interval": [1, "h"],
+      "udp_target": ["10.0.0.30", 33474]
     }
-  ],
+  ]
 }

@@ -3,8 +3,5 @@ import start
 
 def test_mainloop():
     loop = start.LoopState()
-    loop.loop_once()
+    loop.loop_once(1)
 
-
-def test_main():
-    start.main()

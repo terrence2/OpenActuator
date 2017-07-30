@@ -1,4 +1,5 @@
 import conf
+import buttons
 import gc
 import htserver
 import interrupt_vector
@@ -12,19 +13,17 @@ import utime
 import weather_stations
 
 
-def _lower_half(pin, first_call_time, last_call_time):
-    print("GOT LOWER HALF")
+#def _lower_half(pin, first_call_time, last_call_time):
+#    print("GOT LOWER HALF")
 
 
 class LoopState:
     def __init__(self):
-        configure_cpu()
-        net.connect_to_wifi()
+        #button = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
+        #iv.register(machine.Pin.IRQ_FALLING, button, _lower_half)
 
         iv = interrupt_vector.InterruptVector()
-
-        button = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
-        iv.register(machine.Pin.IRQ_FALLING, button, _lower_half)
+        _ = buttons.Buttons(iv, conf.config().get('buttons', []))
 
         weather_devices = weather_stations.WeatherStations(conf.config().get('weather_stations', []))
 
@@ -32,7 +31,7 @@ class LoopState:
         self.minimum_loop_time = conf.config().get("main_loop", {}).get("minimum", 1)
 
         self.thinkers = [
-            iv,
+            iv,  # buttons, switches, et al.
             weather_devices
         ]
 
@@ -55,7 +54,7 @@ class LoopState:
             self.loop_once(delay)
             delay = self.target_loop_time - (utime.ticks_ms() - before_time)
             if delay < 0:
-                print("Over loop time by: {}ms".format(-delay))
+                print("Over loop time by: {}ms at {}".format(-delay, utime.ticks_ms()))
                 delay = self.minimum_loop_time
 
     def loop_once(self, target_delay):
@@ -85,6 +84,13 @@ def main():
     print("FS Stats:")
     print("  FS Used: {} MiB".format((fs_info[2] * fs_info[1]) / 1024 / 1024))
     print("  FS Free: {} MiB".format((fs_info[3] * fs_info[1]) / 1024 / 1024))
+
+    print("Configuring CPU...")
+    configure_cpu()
+
+    print("Connecting to WIFI...")
+    net.connect_to_wifi()
+
     try:
         loop = LoopState()
         loop.loop_forever()

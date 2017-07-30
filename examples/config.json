@@ -23,7 +23,10 @@
   },
 
   "buttons": [
-
+    {
+      "pin": 12,
+      "pull": "up"
+    }
   ],
 
   "switches": [],

@@ -1,3 +1,4 @@
+from machine import Pin
 import machine
 import utime
 
@@ -16,22 +17,24 @@ class InterruptVector:
         self.triggered = False
         self.handlers = {}
 
-    def register(self, trigger, pin, callback) -> int:
-        self.handlers[id(pin)] = HandlerData(pin, callback)
-        pin.irq(self._upper_half, trigger)
+    def register(self, trigger, pin, callback):
+        self.handlers[(id(pin), trigger)] = HandlerData(pin, callback)
+        pin.irq(self._make_upper_half(trigger), trigger)
 
-    def _upper_half(self, pin):
-        handler = self.handlers[id(pin)]
-        irq_state = machine.disable_irq()
-        try:
-            self.triggered = True
-            if handler.triggered:
-                handler.last_trigger_time = utime.ticks_ms()
-            else:
-                handler.first_trigger_time = utime.ticks_ms()
-                handler.triggered = True
-        finally:
-            machine.enable_irq(irq_state)
+    def _make_upper_half(self, trigger):
+        def _upper_half(pin):
+            handler = self.handlers[(id(pin), trigger)]
+            irq_state = machine.disable_irq()
+            try:
+                self.triggered = True
+                if handler.triggered:
+                    handler.last_trigger_time = utime.ticks_ms()
+                else:
+                    handler.first_trigger_time = handler.last_trigger_time = utime.ticks_ms()
+                    handler.triggered = True
+            finally:
+                machine.enable_irq(irq_state)
+        return _upper_half
 
     def think(self, ticks_ms):
         irq_state = machine.disable_irq()

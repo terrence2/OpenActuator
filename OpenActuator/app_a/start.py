@@ -1,10 +1,13 @@
 import conf
+import gc
 import htserver
 import interrupt_vector
 import machine
+import micropython
 import net
 import panic_handler
 import select
+import uos
 import utime
 import weather_stations
 
@@ -75,6 +78,13 @@ def configure_cpu():
 
 
 def main():
+    gc.collect()
+    print("Memory Info:")
+    micropython.mem_info()
+    fs_info = uos.statvfs('/')
+    print("FS Stats:")
+    print("  FS Used: {} MiB".format((fs_info[2] * fs_info[1]) / 1024 / 1024))
+    print("  FS Free: {} MiB".format((fs_info[3] * fs_info[1]) / 1024 / 1024))
     try:
         loop = LoopState()
         loop.loop_forever()

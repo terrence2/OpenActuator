@@ -27,6 +27,7 @@ def parse_duration_ms(duration):
         "ms": 1,
         "s": 1000,
         "m": 60000,
+        "h": 3600000,
     }[duration[1]]
     return base * unit
 

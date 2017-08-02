@@ -1,5 +1,7 @@
 # OpenActuator
-A ~~secure~~ (waiting on ssl server support in the esp8266 micropython implementation), reliable, and fast ESP userland for lights, buttons, switches, motion detectors, weather sensors, etc.
+A ~~secure~~ (waiting on ssl server support in the esp8266 micropython implementation),
+reliable, and fast ESP userland for lights, motors, buttons, switches, motion detectors,
+weather sensors, etc.
 
 ## Quick Start Guide
 1) Get your hands on an ESP-32 or ESP-8266.

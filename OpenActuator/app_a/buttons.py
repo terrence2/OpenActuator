@@ -3,7 +3,7 @@ from micropython import const
 import usocket
 import utime
 
-
+MESSAGE = '{{"type":"button","id":"{}","seq":{}}}'
 DEFAULT_LOCKOUT = const(3)  # frames
 
 
@@ -17,7 +17,7 @@ class Buttons:
 
 
 class Button:
-    def __init__(self, iv, id_, config):
+    def __init__(self, iv, identity, config):
         assert 'pin' in config, "'pin' key is required in button config"
         assert 'active' in config, "'active' key is required in button config"
         assert config['active'] in ('high', 'low'), "button active key must be 'high' or 'low'"
@@ -25,7 +25,7 @@ class Button:
         assert 'udp_target' in config
         assert 'http_target' in config
 
-        self.id = id_
+        self.identity = identity
         self.sequence = 0
 
         self.pin_number = config['pin']
@@ -56,12 +56,12 @@ class Button:
 
         if self.triggered:
             self.triggered = False
-            self.send_event()
+            self.notify()
 
-    def send_event(self):
+    def notify(self):
         t0 = utime.ticks_ms()
-        msg = bytes('{{"id":{},"seq":{}}}'.format(self.id, self.sequence), 'ascii')
+        msg = bytes(MESSAGE.format(self.identity, self.sequence), 'ascii')
         self.sequence += 1
         self.udp_socket.sendto(msg, self.udp_target)
-        print("Button {} sent in {}ms".format(self.id, utime.ticks_ms() - t0))
+        print("Button {} sent in {}ms".format(self.identity, utime.ticks_ms() - t0))
 

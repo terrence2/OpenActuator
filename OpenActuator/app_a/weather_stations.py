@@ -6,7 +6,7 @@ import machine
 import usocket
 import utime
 
-MESSAGE = '{{"id":"{}","temperature":{},"humidity":{},"pressure":{}}}'
+MESSAGE = '{{"type":"weather_station","id":"{}","temperature":{},"humidity":{},"pressure":{}}}'
 
 
 class WeatherStations:
@@ -97,7 +97,7 @@ class DHTWeatherStation(WeatherStation):
         try:
             t0 = utime.ticks_ms()
             self.device.measure()
-            print("WS Measure took: {} ms".format(utime.ticks_ms() - t0))
+            print("WS {} measurement took: {} ms".format(self.identity, utime.ticks_ms() - t0))
         except OSError:
             diagnostic_led.blink_n(50, 10)
             return None

@@ -9,6 +9,7 @@ import interrupt_vector
 import buttons
 from helpers import threaded
 
+import json
 import socket
 
 
@@ -18,7 +19,7 @@ def test_button_simple():
     sock.setblocking(True)
     sock.bind(('127.0.0.1', 12347))
 
-    def _client(_):
+    def _server(_):
         config = {
             "foo": {
                 "pin": 42,
@@ -35,7 +36,10 @@ def test_button_simple():
         iv.think(1)
         btns.think(1)
 
-    with threaded(_client, None):
-        data, _addr = sock.recvfrom(1024)
-        assert data == b'{"id":foo,"seq":0}'
+    with threaded(_server, None):
+        raw, _addr = sock.recvfrom(1024)
+        data = json.loads(str(raw, 'ascii'))
+        assert data['id'] == 'foo'
+        assert data['type'] == 'button'
+        assert data['seq'] == 0
 

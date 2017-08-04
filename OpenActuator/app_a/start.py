@@ -13,18 +13,10 @@ import utime
 import weather_stations
 
 
-#def _lower_half(pin, first_call_time, last_call_time):
-#    print("GOT LOWER HALF")
-
-
 class LoopState:
     def __init__(self):
-        #button = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
-        #iv.register(machine.Pin.IRQ_FALLING, button, _lower_half)
-
         iv = interrupt_vector.InterruptVector()
-        _ = buttons.Buttons(iv, conf.config().get('buttons', []))
-
+        btns = buttons.Buttons(iv, conf.config().get('buttons', {}))
         weather_devices = weather_stations.WeatherStations(conf.config().get('weather_stations', []))
 
         self.target_loop_time = conf.config().get("main_loop", {}).get("interval", 32)
@@ -32,6 +24,7 @@ class LoopState:
 
         self.thinkers = [
             iv,  # buttons, switches, et al.
+            btns,
             weather_devices
         ]
 

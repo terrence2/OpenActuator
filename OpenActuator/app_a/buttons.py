@@ -4,7 +4,7 @@ import usocket
 import utime
 
 MESSAGE = '{{"type":"button","id":"{}","seq":{}}}'
-DEFAULT_LOCKOUT = const(3)  # frames
+DEFAULT_LOCKOUT = const(10)  # frames
 
 
 class Buttons:

@@ -4,7 +4,7 @@
   },
 
   "main_loop": {
-    "interval": 50,
+    "interval": 33,
     "minimum": 10
   },
 
@@ -29,7 +29,7 @@
       "pull": "high",
       "udp_target": [
         "10.0.0.30",
-        33475
+        33474
       ],
       "http_target": [
         "10.0.0.30",

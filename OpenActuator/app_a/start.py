@@ -29,7 +29,7 @@ class LoopState:
         ]
 
         routes = [
-            ('GET', '/weather_stations/', 0, weather_devices.list),
+            ('GET', '/weather_stations', 0, weather_devices.list),
             ('GET', '/weather_stations/(.+)', 1, weather_devices.show)
         ]
 

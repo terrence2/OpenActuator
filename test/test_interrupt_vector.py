@@ -14,10 +14,12 @@ def test_basic():
     pin = machine.Pin(42)
 
     called = 0
-    def _lower_half(iv_pin, first_call_time, last_call_time):
+
+    def _lower_half(iv_pin, trigger):
         nonlocal called
         called += 1
         assert iv_pin == pin
+        assert trigger == machine.Pin.IRQ_FALLING
 
     iv = interrupt_vector.InterruptVector()
     iv.think(10)

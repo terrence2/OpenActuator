@@ -20,7 +20,7 @@ def test_weather_stations():
         "type": "DHT22",
         "id": "foo",
         "interval": [10, "ms"],
-        "target": ['127.0.0.1', 12345],
+        "udp_target": ['127.0.0.1', 12345],
         "pin": 42,
     }
     station = weather_stations.WeatherStation.from_config(config)
@@ -53,13 +53,13 @@ def test_endpoints():
         "type": "DHT22",
         "id": "foo",
         "interval": [10, "ms"],
-        "target": ['127.0.0.1', 12345],
+        "udp_target": ['127.0.0.1', 12345],
         "pin": 42,
     }, {
         "type": "DHT11",
         "id": "bar",
         "interval": [10, "ms"],
-        "target": ['127.0.0.1', 12345],
+        "udp_target": ['127.0.0.1', 12345],
         "pin": 43,
     }]
     stations = weather_stations.WeatherStations(config)

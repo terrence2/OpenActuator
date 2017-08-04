@@ -95,6 +95,7 @@ def main():
         loop = LoopState()
         loop.loop_forever()
     except Exception as ex:
+        print(str(ex))
         panic_handler.send_exception_message(ex)
         utime.sleep_ms(10000)
         machine.reset()

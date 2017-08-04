@@ -10,16 +10,7 @@ import htserver
 import re
 import select
 import socket
-import threading
-import contextlib
-
-
-@contextlib.contextmanager
-def threaded(func, *args):
-    t = threading.Thread(target=func, args=args)
-    t.start()
-    yield
-    t.join()
+from helpers import threaded
 
 
 ADDRESS = ('127.0.0.1', 12346)

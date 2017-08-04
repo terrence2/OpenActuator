@@ -1,35 +1,67 @@
 from machine import Pin
+from micropython import const
+import usocket
+import utime
+
+
+DEFAULT_LOCKOUT = const(3)  # frames
 
 
 class Buttons:
     def __init__(self, iv, configs):
-        self.buttons = [Button(iv, c) for c in configs]
+        self.buttons = [Button(iv, key, config) for key, config in configs.items()]
+
+    def think(self, ticks_ms):
+        for btn in self.buttons:
+            btn.think(ticks_ms)
 
 
 class Button:
-    def __init__(self, iv, config):
+    def __init__(self, iv, id_, config):
+        assert 'pin' in config, "'pin' key is required in button config"
+        assert 'active' in config, "'active' key is required in button config"
+        assert config['active'] in ('high', 'low'), "button active key must be 'high' or 'low'"
+        assert config.get('pull') in ('high', None), "button 'pull' key must be absent or 'high'"
+        assert 'udp_target' in config
+        assert 'http_target' in config
+
+        self.id = id_
+        self.sequence = 0
+
         self.pin_number = config['pin']
+        pull = {'high': Pin.PULL_UP}.get(config['pull'], -1)
+        trigger = {'high': Pin.IRQ_RISING, 'low': Pin.IRQ_FALLING}[config['active']]
 
-        pull_config = config['pull'].lower()
-        self.pull = -1
-        self.active_when = None
-        if pull_config == 'up':
-            self.pull = Pin.PULL_UP
-            self.active_when = 0
-        elif pull_config == 'down':
-            self.pull = Pin.PULL_DOWN
-            self.active_when = 1
+        self.udp_target = tuple(config['udp_target'])
+        self.udp_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
+        self.udp_socket.setblocking(False)
 
-        self.active_when = config.get('active_when', self.active_when)
-        assert self.active_when is not None, "buttons must specify 'active_when' if no pull is used"
+        self.http_target = tuple(config['http_target'])
 
-        self.active_edge_trigger = Pin.IRQ_FALLING if self.active_when == 0 else Pin.IRQ_RISING
+        self.triggered = False
+        self.lockout = 0
 
-        self.pin = Pin(self.pin_number, Pin.IN, Pin.PULL_UP)
-        iv.register(self.active_edge_trigger, self.pin, self.on_activate_irq)
+        self.pin = Pin(self.pin_number, Pin.IN, pull)
+        iv.register(trigger, self.pin, self._irq_lower_half)
 
-    def on_activate_irq(self, pin, first_ms, last_ms):
-        print("GOT ACTIVATE: {} to {}".format(first_ms, last_ms))
+    def _irq_lower_half(self, _pin, _trigger):
+        if self.lockout > 0:
+            return
+        self.triggered = True
+        self.lockout = DEFAULT_LOCKOUT
 
+    def think(self, _ticks_ms):
+        if self.lockout > 0:
+            self.lockout -= 1
 
+        if self.triggered:
+            self.triggered = False
+            self.send_event()
+
+    def send_event(self):
+        t0 = utime.ticks_ms()
+        msg = bytes('{{"id":{},"seq":{}}}'.format(self.id, self.sequence), 'ascii')
+        self.sequence += 1
+        self.udp_socket.sendto(msg, self.udp_target)
+        print("Button {} sent in {}ms".format(self.id, utime.ticks_ms() - t0))
 

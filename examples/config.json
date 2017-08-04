@@ -1,11 +1,11 @@
 {
   "cpu": {
-    "freq": 80000000,
+    "freq": 80000000
   },
 
   "main_loop": {
     "interval": 50,
-    "minimum": 10,
+    "minimum": 10
   },
 
   "panic_handler": {
@@ -22,15 +22,21 @@
     }
   },
 
-  "buttons": [
-    {
-      "id": "button-test-1",
+  "buttons": {
+    "button-test-1": {
       "pin": 12,
-      "pull": "up",
-      "udp_target": ["10.0.0.30", 33475],
-      "http_target": ["10.0.0.30", 9999]
+      "active": "low",
+      "pull": "high",
+      "udp_target": [
+        "10.0.0.30",
+        33475
+      ],
+      "http_target": [
+        "10.0.0.30",
+        9999
+      ]
     }
-  ],
+  },
 
   "switches": [],
 

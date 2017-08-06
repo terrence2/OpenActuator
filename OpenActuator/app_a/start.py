@@ -38,7 +38,7 @@ class LoopState:
             import uselect
             self.poller = uselect.poll()
 
-        self.server = htserver.HttpServer(self.poller, routes, conf.config()['http_server'])
+        self.server = htserver.HttpServer(self.poller, routes, conf.config().get('http_server', {}))
 
     def loop_forever(self):
         delay = self.target_loop_time

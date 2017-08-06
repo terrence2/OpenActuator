@@ -1,6 +1,6 @@
 # OpenActuator specific stuff.
-config.json
-auth.json
+./examples/config.json
+./auth.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

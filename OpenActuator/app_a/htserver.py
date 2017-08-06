@@ -87,46 +87,77 @@ class HttpClientHandler:
     def __init__(self, poller, server, socket):
         self.server = server
         self.socket = socket
-        self.socket.setblocking(True)
-        self.fp = self.socket.makefile('rwb', 0)
-        poller.register(self.socket, select.POLLIN | select.POLLOUT | select.POLLERR)
+        self.socket.setblocking(False)
+        poller.register(self.socket, select.POLLIN | select.POLLERR)
+
+        self.phase = 'read_status'
+        self.instream = ''
+        self.outstream = b''
+
+        self.method = None
+        self.path = None
+        self.content_length = 0
+        self.body = None
 
     def handle_client_data(self, poller, event):
         if event == select.POLLERR:
             raise RestartError("at handle_ready_sock")
 
-        #self.client_ssl = ussl.wrap_socket(self.client_socket, server_side=True,
-        #                                   keyfile=conf.config()['http_server']['keyfile'],
-        #                                   certfile=conf.config()['http_server']['certfile'],
-        #                                   ca_certs=conf.config()['http_server']['ca_certs'],
-        #                                   cert_reqs=0)  # FIXME: ussl.CERT_REQUIRED, once supported on ESP)
+        if self.phase.startswith('read'):
+            # TODO: use readinto when available
+            raw = self.socket.recv(1024)
+            assert raw
+            self.instream += str(raw, 'ascii')
 
-        request_line = header_line = str(self.fp.readline(), 'ascii')
-        while header_line and header_line != '\r\n':
-            header_line = str(self.fp.readline(), 'ascii')
+            if self.phase == 'read_status':
+                if '\r\n' in self.instream:
+                    offset = self.instream.find('\r\n')
+                    request_line = self.instream[:offset]
+                    self.instream = self.instream[offset + 2:]
+                    self.method, self.path, _v = request_line.split()
+                    self.phase = 'read_headers'
 
-        # Dispatch to route.
-        method, path, _v = request_line.split()
-        handler, args = self.server.find_route(method, path)
-        status, headers, body = handler(*args)
-        body = bytes(body, 'ascii')
-        print(body)
+            if self.phase == 'read_headers':
+                while '\r\n' in self.instream:
+                    offset = self.instream.find('\r\n')
+                    header_line = self.instream[:offset].strip()
+                    self.instream = self.instream[offset + 2:]
+                    if header_line:
+                        header, _, value = header_line.partition(':')
+                        if header.strip().lower() == 'content-length':
+                            self.content_length = int(value.strip())
+                    else:
+                        self.phase = 'read_body'
 
-        status_message = self.server.status_map.get(status, 'Unknown Code')
-        print(status_message)
-        self.socket.send(bytes("HTTP/1.0 {} {}\r\n".format(status, status_message), 'ascii'))
+            if self.phase == 'read_body':
+                if len(self.instream) >= self.content_length:
+                    # We've already read in this frame, so wait for the next loop
+                    # before processing the body. To do this we switch the socket
+                    # into write mode so that the poller will mark us as ready in
+                    # every frame until we actually start writing.
+                    poller.unregister(self.socket)
+                    poller.register(self.socket, select.POLLOUT | select.POLLERR)
+                    self.phase = 'handle_request'
 
-        headers = {}
-        if body:
-            headers['Content-Length'] = str(len(body))
-        for key, value in headers.items():
-            self.socket.send(bytes("{}: {}\r\n".format(key, value), 'ascii'))
-        self.socket.send(b"\r\n")
+        elif self.phase == 'handle_request':
+            handler, args = self.server.find_route(self.method, self.path)
+            status, headers, body = handler(*args)
+            status_message = self.server.status_map.get(status, 'Unknown Code')
+            body = bytes(body, 'ascii')
+            self.outstream = bytes("HTTP/1.0 {} {}\r\n".format(status, status_message), 'ascii')
+            for key, value in headers:
+                self.outstream += bytes("{}: {}\r\n".format(key, value), 'ascii')
+            self.outstream += b"\r\n"
+            self.outstream += body
+            self.phase = 'write'
 
-        if body:
-            self.socket.send(body)
+        elif self.phase == 'write':
+            sent_bytes = self.socket.send(self.outstream)
+            if sent_bytes == len(self.outstream):
+                poller.unregister(self.socket)
+                self.socket.close()
+                return False
+            self.outstream = self.outstream[sent_bytes:]
 
-        poller.unregister(self.socket)
-        self.socket.close()
-        return False
+        return True
 

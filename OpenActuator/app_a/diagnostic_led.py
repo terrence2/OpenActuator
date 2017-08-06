@@ -11,6 +11,7 @@ try:
             value = -value
             invert = True
         DIAGNOSTIC_LED = machine.Signal(value, machine.Pin.OUT, invert=invert)
+    DIAGNOSTIC_LED.off()
 except:
     pass
 

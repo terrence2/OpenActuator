@@ -122,8 +122,10 @@ class HttpClientHandler:
                     offset = self.instream.find('\r\n')
                     header_line = self.instream[:offset].strip()
                     self.instream = self.instream[offset + 2:]
-                    if header_line:
-                        header, _, value = header_line.partition(':')
+                    if header_line and ':' in header_line:
+                        offset = header_line.find(':')
+                        header = header_line[:offset]
+                        value = header_line[offset + 1:]
                         if header.strip().lower() == 'content-length':
                             self.content_length = int(value.strip())
                     else:
